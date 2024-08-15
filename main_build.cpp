@@ -28,7 +28,6 @@ int main(int argc, char* argv[])
 
     std::cout << "Loading " << modelPath << std::endl;
 
-    // uint32_t explicitBatch = 1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH); 
     std::unique_ptr<IBuilder> builder = std::unique_ptr<IBuilder>(createInferBuilder(logger));
     std::unique_ptr<INetworkDefinition> network = std::unique_ptr<INetworkDefinition>(builder->createNetworkV2(1U));
     std::unique_ptr<IParser> parser = std::unique_ptr<IParser>(createParser(*network, logger));
