@@ -19,12 +19,14 @@ class Logger : public ILogger
 
 int main(int argc, char* argv[])
 {
-    std::string modelPath = "yolov8n.onnx";
-
-    if(argc > 1)
+    if(argc != 3)
     {
-        modelPath = argv[1];
+        std::cout << "Expected <model>.onnx <output_filename> as arguments" << std::endl;
+        return 1;
     }
+
+    std::string modelPath = argv[1];
+    std::string output_path = argv[2];
 
     std::cout << "Loading " << modelPath << std::endl;
 
@@ -91,7 +93,7 @@ int main(int argc, char* argv[])
     if(!serializedModel)
         throw std::runtime_error("Error serializing model");
     
-    std::ofstream ofs("yolov8n.engine", std::ios::out | std::ios::binary);
+    std::ofstream ofs(output_path, std::ios::out | std::ios::binary);
     ofs.write((char*)(serializedModel->data()), serializedModel->size());
     ofs.close();
 
