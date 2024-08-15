@@ -177,15 +177,6 @@ private:
             gpuDst.convertTo(mfloat, CV_32FC3);
         }
 
-        // cv::Mat image;
-        // mfloat.download(image);
-
-        // std::cout << "###########################" << std::endl;
-        // for(int i = 0; i < 100; i++)
-        // {
-        //     std::cout << (char)image.data[i] << std::endl;
-        // }
-        // std::cout << "###########################" << std::endl;
         return mfloat;
     }
 
