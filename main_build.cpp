@@ -28,9 +28,9 @@ int main(int argc, char* argv[])
 
     std::cout << "Loading " << modelPath << std::endl;
 
-    uint32_t explicitBatch = 1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH); 
+    // uint32_t explicitBatch = 1U << static_cast<uint32_t>(NetworkDefinitionCreationFlag::kEXPLICIT_BATCH); 
     std::unique_ptr<IBuilder> builder = std::unique_ptr<IBuilder>(createInferBuilder(logger));
-    std::unique_ptr<INetworkDefinition> network = std::unique_ptr<INetworkDefinition>(builder->createNetworkV2(explicitBatch));
+    std::unique_ptr<INetworkDefinition> network = std::unique_ptr<INetworkDefinition>(builder->createNetworkV2(1U));
     std::unique_ptr<IParser> parser = std::unique_ptr<IParser>(createParser(*network, logger));
 
 
@@ -71,13 +71,14 @@ int main(int argc, char* argv[])
         const auto inputName = input->getName();
         const auto inputDims = input->getDimensions();
 
+        int32_t batch_size = inputDims.d[0];
         int32_t inputC = inputDims.d[1];
         int32_t inputH = inputDims.d[2];
         int32_t inputW = inputDims.d[3];
 
-        optimizationProfile->setDimensions(inputName, OptProfileSelector::kMIN, Dims4(1, inputC, inputH, inputW));
-        optimizationProfile->setDimensions(inputName, OptProfileSelector::kOPT, Dims4(1, inputC, inputH, inputW));
-        optimizationProfile->setDimensions(inputName, OptProfileSelector::kMAX, Dims4(1, inputC, inputH, inputW));
+        optimizationProfile->setDimensions(inputName, OptProfileSelector::kMIN, Dims4(batch_size, inputC, inputH, inputW));
+        optimizationProfile->setDimensions(inputName, OptProfileSelector::kOPT, Dims4(batch_size, inputC, inputH, inputW));
+        optimizationProfile->setDimensions(inputName, OptProfileSelector::kMAX, Dims4(batch_size, inputC, inputH, inputW));
     }
 
     config->addOptimizationProfile(optimizationProfile);
