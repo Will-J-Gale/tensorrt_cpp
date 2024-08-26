@@ -11,7 +11,7 @@ Simple engine builder and tensorrt inference programs
 * This program turns an `.onnx` model into an `.engine`
 
 ## tensorrt_inference_image
-* Runs inference on an image, shows the inference time, and draws boxes for detections.
+* Runs inference on an image, shows the inference time for , and draws boxes for detections.
 
 ## tensorrt_inference_video
 * Runs inference on an video, shows the inference time, and draws boxes for detections.

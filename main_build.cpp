@@ -1,55 +1,46 @@
 #include <fstream>
+#include <filesystem>
 #include <iostream>
-#include <memory>
-#include "NvInfer.h"
-#include "NvOnnxParser.h"
+
+#include <utils.h>
 
 using namespace nvonnxparser;
 using namespace nvinfer1;
 
-class Logger : public ILogger           
-{
-    void log(Severity severity, const char* msg) noexcept override
-    {
-        // suppress info-level messages
-        if (severity <= Severity::kWARNING)
-            std::cout << "WARNING: " << msg << std::endl;
-    }
-} logger;
 
 int main(int argc, char* argv[])
 {
-    if(argc != 3)
+    if(argc != 2)
     {
-        std::cout << "Expected <model>.onnx <output_filename> as arguments" << std::endl;
+        std::cout << "Expected <model>.onnx as argument" << std::endl;
         return 1;
     }
 
-    std::string modelPath = argv[1];
-    std::string output_path = argv[2];
+    Logger logger;
+    std::filesystem::path modelPath = argv[1];
+    std::string outputPath = modelPath.stem().string() + ".engine";
 
-    std::cout << "Loading " << modelPath << std::endl;
+    std::cout << "Building. This may take a few minutes. " << modelPath << std::endl;
 
     std::unique_ptr<IBuilder> builder = std::unique_ptr<IBuilder>(createInferBuilder(logger));
     std::unique_ptr<INetworkDefinition> network = std::unique_ptr<INetworkDefinition>(builder->createNetworkV2(1U));
     std::unique_ptr<IParser> parser = std::unique_ptr<IParser>(createParser(*network, logger));
 
-
     std::ifstream file(modelPath, std::ios::binary | std::ios::ate);
     std::streamsize size = file.tellg();
 
     if(size == -1)
+    {
         throw std::runtime_error("Error reading ONNX file");
+    }
 
     file.seekg(0, std::ios::beg);
-
-    std::cout << "Creating onnx buffer vector of size: " << size << std::endl;
-
     std::vector<char> buffer(size);
-    if(!file.read(buffer.data(), size))
-        throw std::runtime_error("Unable to read ONNX file");
 
-    std::cout <<"Created buffer" << std::endl;
+    if(!file.read(buffer.data(), size))
+    {
+        throw std::runtime_error("Unable to read ONNX file");
+    }
 
     bool parseSuccess = parser->parse(buffer.data(), buffer.size());
     if(!parseSuccess)
@@ -59,7 +50,7 @@ int main(int argc, char* argv[])
             std::cout << parser->getError(i)->desc() << std::endl;
         }
 
-        throw std::runtime_error("Parsed error");
+        throw std::runtime_error("Error parsing onnx file.");
     }
 
     std::unique_ptr<IBuilderConfig> config = std::unique_ptr<IBuilderConfig>(builder->createBuilderConfig());
@@ -91,16 +82,18 @@ int main(int argc, char* argv[])
 
     std::unique_ptr<IHostMemory> serializedModel = std::unique_ptr<IHostMemory>(builder->buildSerializedNetwork(*network, *config));
     if(!serializedModel)
+    {
         throw std::runtime_error("Error serializing model");
+    }
     
-    std::ofstream ofs(output_path, std::ios::out | std::ios::binary);
+    std::ofstream ofs(outputPath, std::ios::out | std::ios::binary);
     ofs.write((char*)(serializedModel->data()), serializedModel->size());
     ofs.close();
 
     IRuntime* runtime = createInferRuntime(logger);
     ICudaEngine* engine = runtime->deserializeCudaEngine(serializedModel->data(), serializedModel->size());
 
-    std::cout << "Finished. Model size: " << serializedModel->size() << std::endl;
+    std::cout << "Finished. Model saved to: " << outputPath << std::endl;
 
     return 0;
 }
